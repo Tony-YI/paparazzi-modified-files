@@ -1,0 +1,18 @@
+Configure coordinator (ground module):
+1.Use XCTU, choose "COORDINATOR API MODE" and write to the module.
+2.Set the "PAN ID" to a random number within 64 bits (the PAN ID must be the same between coordinator and router/end device).
+3.Set the 64-bit destination address of coordinator as "0x000000000000FFFF" for boardcasting use.
+4.Set baud rate to 57600.
+5.Write to the module.
+
+Configure router/end divice (air module)
+1.Use XCTU, choose "ROUTER API MODE" or "END DEVICE API MODE" and write to the module. Enable "JV".(disable it is also ok)
+2.Set the "PAN ID" the same as the coordinator.
+3.Set the 64-bit destination address as the coordinator's 64-bit serial number or just set it as "0x0000000000000000".
+4.Set baud rate to 57600.
+5.Write to the module.
+
+Warring: when reading the module, select "enable API", otherwise you can't read the module.
+Warring: we don't use the "escape mode" in paparazzi.
+
+

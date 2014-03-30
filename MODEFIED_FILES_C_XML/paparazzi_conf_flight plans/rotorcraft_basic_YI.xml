@@ -1,0 +1,98 @@
+<!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
+
+<flight_plan alt="3" ground_alt="0" lat0="43 33 50.83" lon0="1 28 52.61" max_dist_from_home="60" name="MYAC-TEST" security_height="3">
+  <header>
+#include "autopilot.h"
+  </header>
+
+  <!--define waypoints that will be used in the blocks below-->
+  <!--x is east, y is north, refer to the "HOME" waypoint-->
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="STDBY" x="0.0" y="0.0"/>
+    <waypoint name="p1" x="3.0" y="3.0"/>
+    <waypoint name="p2" x="3.0" y="-3.0"/>
+    <waypoint name="LZ" x="1.0" y="0.0"/>
+  </waypoints>
+
+  <blocks>
+
+    <!--wait until we get a fix 3D position with GPS-->
+    <block name="Wait GPS">
+      <call fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+
+    <!--set this point as HOME waypoint-->
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call fun="NavSetGroundReferenceHere()"/><!--at commoe_nav.h-->
+      <!--<call fun="NavSetAltitudeReferenceHere()"/>-->
+    </block>
+
+    <!--holding the aircraft on the ground and make sure the throttle is killed-->
+    <block name="Holding point">
+      <call fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+      <!--until="FALSE" means this block will last forever if we don't click the other blocks-->
+    </block>
+
+    <!--start engine-->
+    <block name="Start Engine">
+      <call fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <!--TAKE OFF. if we click this block, the aircraft will climb up-->
+    <block name="Takeoff" strip_icon="takeoff.png" strip_button="Takeoff">
+      <exception cond="stateGetPositionEnu_f()->z > 2.0" deroute="Standby"/>
+      <!--once the altitude is larger than 2m, the aircraft will go to block "Standby"-->
+      <stay vmode="climb" wp="HOME" climb="1.0"/>
+    </block>
+
+    <!--stay at this point until we click the block below, altitude is above ground is alt - ground_alt-->
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <!--call fun="NavSetWaypointHere(WP_STDBY)"/-->
+      <stay wp="STDBY" height="3"/> <!--stay wp="STDBY" height="2"/--><!--here altitude is 2 m above ground-->
+    </block>
+
+    <!--if we click this block, the aircraft will stay at waypoing "p1"-->
+    <block name="stay_p1">
+      <stay wp="p1"/>
+    </block>
+
+    <!--if we click this block, the aircraft will go to waypoint "p2" from "p1" and then back to "p1" and stay at "p1"-->
+    <block name="go_p2">
+      <go wp="p2"/>
+      <deroute block="stay_p1"/>
+    </block>
+
+    <!--if we click this block, the aircraft will go to wapoint "p2" from "p1" and stay at "p1" for 10s-->
+    <!--after that, the aircraft will go back to "p1" from "p2" and stay at "p1"--->
+    <block name="line_p1_p2">
+      <go from="p1" hmode="route" wp="p2"/>
+      <stay wp="p2" until="stage_time>20"/>
+      <go from="p2" hmode="route" wp="p1"/>
+      <deroute block="stay_p1"/>
+    </block>
+    
+    <!--if we click this block, the aircraft will circle "p1" with radius=nav_radius/2m-->
+    <block name="circle">
+      <circle radius="3" wp="p1"/> <!--circle radius="nav_radius" wp="p1"/-->
+    </block>
+
+    <!--these 3 blocks are for landing-->
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call fun="NavSetWaypointHere(WP_LZ)"/> <!--set the present point as the "LZ" waypoint-->
+    </block>
+    <block name="land">
+      <go wp="LZ"/>
+    </block>
+    <block name="flare">
+      <exception cond="NavDetectGround()" deroute="Holding point"/><!--when the aircraft detect ground, it will go to block "Holding point"-->
+      <call fun="NavStartDetectGround()"/>
+      <stay climb="-0.8" vmode="climb" wp="LZ"/>
+    </block>
+  </blocks>
+</flight_plan>
+   2

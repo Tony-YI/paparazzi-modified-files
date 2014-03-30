@@ -1,0 +1,31 @@
+<!--
+Put this file in paparazzi/conf/modules/
+-->
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="adaptive_pid" dir="adaptive_pid">
+	<doc>
+		<description>
+			This module will change the PID parameters of the stabilization loop when the 
+			autopilot mode is ADAPTIVE_PID
+		</description>
+		<define name="USE_ADAPTIVE_PID_MANUAL"/>
+	</doc>
+	
+	<header>
+		<file name="adaptive_pid.h"/>
+	</header>
+	
+	<init fun="adaptive_pid_init()"/>
+	
+	<periodic fun="adaptive_pid_periodic()" freq="2"/>
+	
+	<makefile target="ap">
+		<file name="adaptive_pid.c"/>
+		<raw>
+			ap.CFLAGS += -DSTAB_WINDY_P=300
+			ap.CFLAGS += -DSTAB_WINDY_I=150
+			ap.CFLAGS += -DSTAB_WINDY_D=50
+			ap.CFLAGS += -DSTAB_WINDY_DD=20
+		</raw>
+	</makefile>
+</module>
